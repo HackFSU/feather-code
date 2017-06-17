@@ -1,0 +1,9 @@
+[package]
+name = "feather-code"
+version = "0.1.0"
+authors = ["Gwen Lofman <Gwen@Lofman.co>"]
+readme = "README.md"
+license = "MPL-2.0"
+description = "Encoding and Decoding for HackFSU's custom visual data encoding format."
+
+[dependencies]
