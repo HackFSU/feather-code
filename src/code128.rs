@@ -406,13 +406,12 @@ impl Code128 {
         use code128::Symbology::*;
         let mut encoded: String = "".to_string();
         let mut symbology = self.start;
-        let mut index: usize = 0;
 
-        'parser: while index < self.symbols.len() {
+
+        'parser: for symbol in self.symbols.iter().map(|sym| *sym as u8) {
             // Convert current symbol to its u8 value to allow for efficitient
             // conversion to char as an ASCII code, simply specifying a
             // different offset for the ASCII values in each symbology
-            let symbol = self.symbols[index] as u8;
 
             // Perform symbology specific behavior, working essentially like a
             // rudimentary finite state machine
@@ -421,7 +420,7 @@ impl Code128 {
                     match symbol {
                         _ if symbol < 64 => {
                             // Codes C0 to C63 encode ASCII values 32 -> 95
-                            encoded.push((symbol + 32) as char);
+                            encoded.push((symbol + 32u8) as char);
                             A
                         },
                         _ if symbol < 96 => {
@@ -473,7 +472,6 @@ impl Code128 {
                     }
                 },
             };
-            index += 1;
         }
         encoded
     }
