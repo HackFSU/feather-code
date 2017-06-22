@@ -1,11 +1,15 @@
-//! Barcode 128 standard as data representation
+/*!
+
+Barcode 128 standard as data representation
+
+*/
 
 /// Representation of Code128 patterns
 ///
 /// Representation of the symbols used in Code128; depending on the active code
 /// set, each symbol maps to one of 3 ASCII values in official Code128.
 ///
-/// code | set A | set B | set C
+/// code | A     | B     | C
 /// :----|:-----:|:-----:|:------:
 /// C0   | space | space | 00
 /// C0   | !     | !     | 01
@@ -326,17 +330,23 @@ impl From<u8> for Pattern {
             100 => C100,
             101 => C101,
             102 => C102,
-            106 => C106,
             _   => C106,
         }
     }
 }
 
-/// Represents the different Code128 alphabets
+/// Tag to represent different Code128 alphabets (symbologies)
 ///
 /// Refer to `Pattern` for more detail
-#[derive(PartialEq,Eq,Debug)]
-pub enum Symbology { A = 104, B = 105, C = 106 }
+#[derive(PartialEq,Eq,Debug,Clone,Copy)]
+pub enum Symbology {
+    /// A-Z, 0-9, and special characters (ASCII 00 to 95)
+    A = 103,
+    /// a-z, A-Z, and 0-9 (ASCII 32-127)
+    B = 104,
+    /// high density, number pair encoding
+    C = 105,
+}
 
 /// A full code 128 encoded datum
 ///
