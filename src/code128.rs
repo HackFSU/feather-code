@@ -400,6 +400,83 @@ impl Code128 {
         // Checksum is the remainder after dividing the raw code sum by 103
         Pattern::from((sum % 103) as u8)
     }
+
+    /// Convert to string, reading the symbology to decode values
+    pub fn to_string(&self) -> String {
+        use code128::Symbology::*;
+        let mut encoded: String = "".to_string();
+        let mut symbology = self.start;
+        let mut index: usize = 0;
+
+        'parser: while index < self.symbols.len() {
+            // Convert current symbol to its u8 value to allow for efficitient
+            // conversion to char as an ASCII code, simply specifying a
+            // different offset for the ASCII values in each symbology
+            let symbol = self.symbols[index] as u8;
+
+            // Perform symbology specific behavior, working essentially like a
+            // rudimentary finite state machine
+            symbology = match symbology {
+                A => {
+                    match symbol {
+                        _ if symbol < 64 => {
+                            // Codes C0 to C63 encode ASCII values 32 -> 95
+                            encoded.push((symbol + 32) as char);
+                            A
+                        },
+                        _ if symbol < 96 => {
+                            // Codes C64 -> C95 encode ASCII values 0 -> 32
+                            encoded.push((symbol - 64) as char);
+                            A
+                        },
+                        96 | 97 | 101 | 102 => A, // Functions 1-4, disabled
+                        98 => unimplemented!(), // Single code shift to B
+                        99 => C, // Switch to symbology C
+                        100 => B, // Switch to symbology B
+                        106 => break 'parser,
+                        _ => unimplemented!(), // Unexpected value
+                    }
+                },
+                B => {
+                    match symbol {
+                        _ if symbol < 96 => {
+                            // Codes C0 -> C95 encode ASCII values 32 -> 127
+                            encoded.push((symbol + 32) as char);
+                            B
+                        },
+                        96 | 97 | 100 | 102 => B, // Functions 1-4, disabled
+                        98 => unimplemented!(), // Single code shift to A
+                        99 => C, // Switch to symbology C
+                        101 => A, // Switch to symbology A
+                        106 => break 'parser,
+                        _ => unimplemented!(), // Unexpected value
+                    }
+                },
+                C => {
+                    match symbol {
+                        _ if symbol < 100 => {
+                            // Calculate the tens and unit digits for string
+                            // conversion
+                            let unit = symbol % 10;
+                            let tens = (symbol - unit) / 10;
+                            // ASCII number codes start at 48, add 48 to offset
+                            // the codes to get the numbers
+                            encoded.push((tens + 48) as char);
+                            encoded.push((unit + 48) as char);
+                            C
+                        },
+                        100 => B, // Switch to symbology C
+                        101 => A, // Switch to symbology A
+                        102 => C, // Function 1, disabled
+                        106 => break 'parser,
+                        _ => unimplemented!(), // Unexpected value
+                    }
+                },
+            };
+            index += 1;
+        }
+        encoded
+    }
 }
 #[cfg(test)]
 mod code128 {
@@ -427,5 +504,36 @@ mod code128 {
 
         assert_eq!(code.calc_checksum(), C92);
         assert!(code.verify_checksum());
+    }
+
+    #[test]
+    fn to_string_conversion() {
+        use code128::Symbology::*;
+        use code128::Pattern::*;
+        use code128::Code128;
+
+        let pjj123_c = Code128 {
+            start: A,
+            symbols: vec![C48, C42, C42, C17, C18, C19, C35],
+            checksum: C54,
+        };
+
+        assert_eq!(pjj123_c.to_string(), "PJJ123C".to_string());
+
+        let country_code = Code128 {
+            start: C,
+            symbols: vec![C102, C42, C18, C40, C20, C50, C101, C16],
+            checksum: C92,
+        };
+
+        assert_eq!(country_code.to_string(), "42184020500".to_string());
+
+        let hello_world = Code128 {
+            start: B,
+            symbols: vec![C40, C69, C76, C76, C79, C0, C55, C79, C82, C76, C68],
+            checksum: C43,
+        };
+
+        assert_eq!(hello_world.to_string(), "Hello World".to_string());
     }
 }
