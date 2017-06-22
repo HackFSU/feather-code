@@ -401,27 +401,31 @@ impl Code128 {
         Pattern::from((sum % 103) as u8)
     }
 }
+#[cfg(test)]
+mod code128 {
 
-#[test]
-fn checksum_works() {
-    use code128::Symbology::{A, C};
-    use code128::Pattern::*;
+    #[test]
+    fn checksum_works() {
+        use code128::Symbology::*;
+        use code128::Pattern::*;
+        use code128::Code128;
 
-    let code = Code128 {
-        start: A,
-        symbols: vec![C48, C42, C42, C17, C18, C19, C35],
-        checksum: C54,
-    };
+        let code = Code128 {
+            start: A,
+            symbols: vec![C48, C42, C42, C17, C18, C19, C35],
+            checksum: C54,
+        };
 
-    assert_eq!(code.calc_checksum(), C54);
-    assert!(code.verify_checksum());
+        assert_eq!(code.calc_checksum(), C54);
+        assert!(code.verify_checksum());
 
-    let code = Code128 {
-        start: C,
-        symbols: vec![C102, C42, C18, C40, C20, C50, C101, C16],
-        checksum: C92,
-    };
+        let code = Code128 {
+            start: C,
+            symbols: vec![C102, C42, C18, C40, C20, C50, C101, C16],
+            checksum: C92,
+        };
 
-    assert_eq!(code.calc_checksum(), C92);
-    assert!(code.verify_checksum());
+        assert_eq!(code.calc_checksum(), C92);
+        assert!(code.verify_checksum());
+    }
 }
