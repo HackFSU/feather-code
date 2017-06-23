@@ -401,12 +401,11 @@ impl Code128 {
         Pattern::from((sum % 103) as u8)
     }
 
-    /// Convert to string, reading the symbology to decode values
-    pub fn to_string(&self) -> String {
+    /// Convert to string, reading the symbology to decode values to a string
+    pub fn decode(&self) -> String {
         use code128::Symbology::*;
         let mut encoded: String = "".to_string();
         let mut symbology = self.start;
-
 
         'parser: for symbol in self.symbols.iter().map(|sym| *sym as u8) {
             // Convert current symbol to its u8 value to allow for efficitient
@@ -476,6 +475,7 @@ impl Code128 {
         encoded
     }
 }
+
 #[cfg(test)]
 mod code128 {
 
@@ -516,7 +516,7 @@ mod code128 {
             checksum: C54,
         };
 
-        assert_eq!(pjj123_c.to_string(), "PJJ123C".to_string());
+        assert_eq!(pjj123_c.decode(), "PJJ123C".to_string());
 
         let country_code = Code128 {
             start: C,
@@ -524,7 +524,7 @@ mod code128 {
             checksum: C92,
         };
 
-        assert_eq!(country_code.to_string(), "42184020500".to_string());
+        assert_eq!(country_code.decode(), "42184020500".to_string());
 
         let hello_world = Code128 {
             start: B,
@@ -532,6 +532,6 @@ mod code128 {
             checksum: C43,
         };
 
-        assert_eq!(hello_world.to_string(), "Hello World".to_string());
+        assert_eq!(hello_world.decode(), "Hello World".to_string());
     }
 }
