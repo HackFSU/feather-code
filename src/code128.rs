@@ -116,7 +116,7 @@ Barcode 128 standard as data representation
 /// C102 | FNC 1 | FNC 1 | FNC 1
 /// C106 | stop  | stop  | stop
 #[allow(missing_docs)]
-#[derive(PartialEq,Eq,Debug,Clone,Copy)]
+#[derive(PartialEq,Eq,PartialOrd,Ord,Debug,Clone,Copy)]
 pub enum Pattern {
     C0,
     C1,
@@ -405,70 +405,68 @@ impl Code128 {
     /// Convert to string, reading the symbology to decode values to a string
     pub fn decode(&self) -> String {
         use code128::Symbology::*;
+        use code128::Pattern::*;
         let mut encoded: String = "".to_string();
         let mut symbology = self.start;
 
-        'parser: for symbol in self.symbols.iter().map(|sym| *sym as u8) {
-            // Convert current symbol to its u8 value to allow for efficitient
-            // conversion to char as an ASCII code, simply specifying a
-            // different offset for the ASCII values in each symbology
-
+        'parser: for symbol in &self.symbols {
+            let symbol = *symbol;
             // Perform symbology specific behavior, working essentially like a
             // rudimentary finite state machine
             symbology = match symbology {
                 A => {
                     match symbol {
-                        _ if symbol < 64 => {
+                        _ if symbol < C64 => {
                             // Codes C0 to C63 encode ASCII values 32 -> 95
-                            encoded.push((symbol + 32u8) as char);
+                            encoded.push((symbol as u8 + 32) as char);
                             A
                         },
-                        _ if symbol < 96 => {
+                        _ if symbol < C96 => {
                             // Codes C64 -> C95 encode ASCII values 0 -> 32
-                            encoded.push((symbol - 64) as char);
+                            encoded.push((symbol as u8 - 64) as char);
                             A
                         },
-                        96 | 97 | 101 | 102 => A, // Functions 1-4, disabled
-                        98 => unimplemented!(), // Single code shift to B
-                        99 => C, // Switch to symbology C
-                        100 => B, // Switch to symbology B
-                        106 => break 'parser,
-                        _ => unimplemented!(), // Unexpected value
+                        C96 | C97 | C101 | C102 => A, // Functions 1-4, disabled
+                        C98 => unimplemented!(), // Single code shift to B
+                        C99 => C, // Switch to symbology C
+                        C100 => B, // Switch to symbology B
+                        C106 => break 'parser,
+                        _ => unimplemented!(),
                     }
                 },
                 B => {
                     match symbol {
-                        _ if symbol < 96 => {
+                        _ if symbol < C96 => {
                             // Codes C0 -> C95 encode ASCII values 32 -> 127
-                            encoded.push((symbol + 32) as char);
+                            encoded.push((symbol as u8 + 32) as char);
                             B
                         },
-                        96 | 97 | 100 | 102 => B, // Functions 1-4, disabled
-                        98 => unimplemented!(), // Single code shift to A
-                        99 => C, // Switch to symbology C
-                        101 => A, // Switch to symbology A
-                        106 => break 'parser,
-                        _ => unimplemented!(), // Unexpected value
+                        C96 | C97 | C100 | C102 => B, // Functions 1-4, disabled
+                        C98 => unimplemented!(), // Single code shift to A
+                        C99 => C, // Switch to symbology C
+                        C101 => A, // Switch to symbology A
+                        C106 => break 'parser,
+                        _ => unimplemented!(),
                     }
                 },
                 C => {
                     match symbol {
-                        _ if symbol < 100 => {
+                        _ if symbol < C100 => {
                             // Calculate the tens and unit digits for string
                             // conversion
-                            let unit = symbol % 10;
-                            let tens = (symbol - unit) / 10;
+                            let unit = symbol as u8 % 10;
+                            let tens = (symbol as u8 - unit) / 10;
                             // ASCII number codes start at 48, add 48 to offset
                             // the codes to get the numbers
                             encoded.push((tens + 48) as char);
                             encoded.push((unit + 48) as char);
                             C
                         },
-                        100 => B, // Switch to symbology C
-                        101 => A, // Switch to symbology A
-                        102 => C, // Function 1, disabled
-                        106 => break 'parser,
-                        _ => unimplemented!(), // Unexpected value
+                        C100 => B, // Switch to symbology C
+                        C101 => A, // Switch to symbology A
+                        C102 => C, // Function 1, disabled
+                        C106 => break 'parser,
+                        _ => unimplemented!(),
                     }
                 },
             };
