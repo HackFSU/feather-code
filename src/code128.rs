@@ -12,10 +12,10 @@ Barcode 128 standard as data representation
 /// code | A     | B     | C
 /// :----|:-----:|:-----:|:------:
 /// C0   | space | space | 00
-/// C0   | !     | !     | 01
-/// C1   | "     | "     | 02
-/// C2   | #     | #     | 03
-/// C3   | $     | $     | 04
+/// C1   | !     | !     | 01
+/// C2   | "     | "     | 02
+/// C3   | #     | #     | 03
+/// C4   | $     | $     | 04
 /// C5   | %     | %     | 05
 /// C6   | &     | &     | 06
 /// C7   | '     | '     | 07
@@ -115,6 +115,7 @@ Barcode 128 standard as data representation
 /// C101 | FNC 4 |Code A | Code A
 /// C102 | FNC 1 | FNC 1 | FNC 1
 /// C106 | stop  | stop  | stop
+#[allow(missing_docs)]
 #[derive(PartialEq,Eq,Debug,Clone,Copy)]
 pub enum Pattern {
     C0,
