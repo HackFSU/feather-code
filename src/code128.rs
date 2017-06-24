@@ -404,52 +404,71 @@ impl Code128 {
 
     /// Convert to string, reading the symbology to decode values to a string
     pub fn decode(&self) -> String {
-        use code128::Symbology::*;
         use code128::Pattern::*;
         let mut encoded: String = "".to_string();
-        let mut symbology = self.start;
+
+        #[derive(PartialEq,Eq)]
+        enum Parser { A, B, C, ShiftA, ShiftB };
+
+        let mut state = match self.start {
+            Symbology::A => Parser::A,
+            Symbology::B => Parser::B,
+            Symbology::C => Parser::C,
+        };
 
         'parser: for symbol in &self.symbols {
             let symbol = *symbol;
             // Perform symbology specific behavior, working essentially like a
             // rudimentary finite state machine
-            symbology = match symbology {
-                A => {
+            state = match state {
+                Parser::A | Parser::ShiftA => {
                     match symbol {
                         _ if symbol < C64 => {
                             // Codes C0 to C63 encode ASCII values 32 -> 95
                             encoded.push((symbol as u8 + 32) as char);
-                            A
+                            if state == Parser::ShiftA {
+                                Parser::B
+                            } else {
+                                Parser::A
+                            }
                         },
                         _ if symbol < C96 => {
                             // Codes C64 -> C95 encode ASCII values 0 -> 32
                             encoded.push((symbol as u8 - 64) as char);
-                            A
+                            if state == Parser::ShiftA {
+                                Parser::B
+                            } else {
+                                Parser::A
+                            }
                         },
-                        C96 | C97 | C101 | C102 => A, // Functions 1-4, disabled
-                        C98 => unimplemented!(), // Single code shift to B
-                        C99 => C, // Switch to symbology C
-                        C100 => B, // Switch to symbology B
+                        C96 | C97 | C101 | C102 => Parser::A, // Functions 1-4
+                        C98 => Parser::ShiftB, // Single code shift to B
+                        C99 => Parser::C, // Switch to symbology C
+                        C100 => Parser::B, // Switch to symbology B
                         C106 => break 'parser,
                         _ => unimplemented!(),
                     }
                 },
-                B => {
+                Parser::B | Parser::ShiftB => {
                     match symbol {
                         _ if symbol < C96 => {
                             // Codes C0 -> C95 encode ASCII values 32 -> 127
                             encoded.push((symbol as u8 + 32) as char);
-                            B
+                            if state == Parser::ShiftB {
+                                Parser::A
+                            } else {
+                                Parser::B
+                            }
                         },
-                        C96 | C97 | C100 | C102 => B, // Functions 1-4, disabled
-                        C98 => unimplemented!(), // Single code shift to A
-                        C99 => C, // Switch to symbology C
-                        C101 => A, // Switch to symbology A
+                        C96 | C97 | C100 | C102 => Parser::B, // Functions 1-4
+                        C98 => Parser::ShiftA, // Single code shift to A
+                        C99 => Parser::C, // Switch to symbology C
+                        C101 => Parser::A, // Switch to symbology A
                         C106 => break 'parser,
                         _ => unimplemented!(),
                     }
                 },
-                C => {
+                Parser::C => {
                     match symbol {
                         _ if symbol < C100 => {
                             // Calculate the tens and unit digits for string
@@ -460,11 +479,11 @@ impl Code128 {
                             // the codes to get the numbers
                             encoded.push((tens + 48) as char);
                             encoded.push((unit + 48) as char);
-                            C
+                            Parser::C
                         },
-                        C100 => B, // Switch to symbology C
-                        C101 => A, // Switch to symbology A
-                        C102 => C, // Function 1, disabled
+                        C100 => Parser::B, // Switch to symbology C
+                        C101 => Parser::A, // Switch to symbology A
+                        C102 => Parser::C, // Function 1, disabled
                         C106 => break 'parser,
                         _ => unimplemented!(),
                     }
@@ -532,5 +551,13 @@ mod code128 {
         };
 
         assert_eq!(hello_world.decode(), "Hello World".to_string());
+
+        let shift_codes = Code128 {
+            start: A,
+            symbols: vec![C51, C40, C98, C73, C38, C52, C100, C98, C1],
+            checksum: C99,
+        };
+
+        assert_eq!(shift_codes.decode(), "SHiFT!".to_string())
     }
 }
