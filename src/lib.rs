@@ -7,4 +7,4 @@
 //!
 //! Custom visual encoding format extended from code128 barcode encoding.
 
-pub mod code128;
+pub mod internals;

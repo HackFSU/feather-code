@@ -226,7 +226,7 @@ pub enum Pattern {
 
 impl From<u8> for Pattern {
     fn from(u: u8) -> Pattern {
-        use code128::Pattern::*;
+        use internals::code128::Pattern::*;
         match u {
             0 => C0,
             1 => C1,
@@ -368,11 +368,11 @@ pub enum Symbology {
 #[derive(PartialEq,Eq,Debug)]
 pub struct Code128 {
     /// Start code which indicates the initial symbology
-    start: Symbology,
+    pub start: Symbology,
     /// Collection of symbols which encode a string
-    symbols: Vec<Pattern>,
+    pub symbols: Vec<Pattern>,
     /// A raw pattern from C0 to C102 calculated from the raw pattern values
-    checksum: Pattern,
+    pub checksum: Pattern,
 }
 
 impl Code128 {
@@ -383,7 +383,7 @@ impl Code128 {
 
     /// Calculate checksum digit from raw encoding pattern
     pub fn calc_checksum(&self) -> Pattern {
-        use code128::Symbology::*;
+        use internals::code128::Symbology::*;
         // Sum raw numerical values from each symbol multiplied by its position
         let sum: u64 = {
             let mut pos: u64 = 0;
@@ -404,7 +404,7 @@ impl Code128 {
 
     /// Convert to string, reading the symbology to decode values to a string
     pub fn decode(&self) -> String {
-        use code128::Pattern::*;
+        use internals::code128::Pattern::*;
         let mut encoded: String = "".to_string();
 
         #[derive(PartialEq,Eq)]
@@ -499,9 +499,9 @@ mod code128 {
 
     #[test]
     fn checksum_works() {
-        use code128::Symbology::*;
-        use code128::Pattern::*;
-        use code128::Code128;
+        use internals::code128::Symbology::*;
+        use internals::code128::Pattern::*;
+        use internals::code128::Code128;
 
         let code = Code128 {
             start: A,
@@ -524,9 +524,9 @@ mod code128 {
 
     #[test]
     fn to_string_conversion() {
-        use code128::Symbology::*;
-        use code128::Pattern::*;
-        use code128::Code128;
+        use internals::code128::Symbology::*;
+        use internals::code128::Pattern::*;
+        use internals::code128::Code128;
 
         let pjj123_c = Code128 {
             start: A,
