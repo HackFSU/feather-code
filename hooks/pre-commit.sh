@@ -30,7 +30,8 @@ then
 
     cargo doc --no-deps &&
     cargo build &&
-    cargo test --all
+    cargo test --all &&
+    rustup run nightly cargo bench
 
     # Capture exit code from tests
     status=$?
