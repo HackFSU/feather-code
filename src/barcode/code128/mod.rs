@@ -346,9 +346,9 @@ impl<'a, E> Decode<String> for Code128<'a, E> where E: 'a + Encoding + Debug {
     /// # Example
     ///
     /// ```rust
-    /// # use feather_code::internals::format::Decode;
-    /// # use feather_code::internals::code128::Code128;
-    /// # use feather_code::internals::code128::encodings::Pattern::*;
+    /// # use feather_code::barcode::format::Decode;
+    /// # use feather_code::barcode::code128::Code128;
+    /// # use feather_code::barcode::code128::encodings::Pattern::*;
     /// let buffer = [C105, C102, C42, C18, C40, C20, C50, C101, C16, C92, C106];
     /// let country_code: String = Code128(buffer.as_ref()).decode().unwrap();
     ///
@@ -433,9 +433,9 @@ mod test {
 
     #[test]
     fn checksum() {
-        use internals::format::Format;
-        use internals::code128::encodings::Pattern::*;
-        use internals::code128::Code128;
+        use barcode::format::Format;
+        use barcode::code128::encodings::Pattern::*;
+        use barcode::code128::Code128;
 
         assert!(Code128(&[C103, C48, C42, C42, C17, C18, C19, C35, C54, C106]).checksum());
 
@@ -445,8 +445,8 @@ mod test {
 
     #[test]
     fn decode() {
-        use internals::code128::Code128;
-        use internals::format::Decode;
+        use barcode::code128::Code128;
+        use barcode::format::Decode;
 
         let pjj123_c = [103, 48, 42, 42, 17, 18, 19, 35, 54, 106];
 
@@ -467,9 +467,9 @@ mod test {
 
     #[test]
     fn split_data() {
-        use internals::code128::Code128;
-        use internals::code128::encodings::Pattern::*;
-        use internals::code128::Symbology::*;
+        use barcode::code128::Code128;
+        use barcode::code128::encodings::Pattern::*;
+        use barcode::code128::Symbology::*;
 
         let symbols = [C103, C48, C42, C42, C17, C18, C19, C35, C54, C106];
         let code = Code128(&symbols);
@@ -494,7 +494,7 @@ mod test {
 
     quickcheck! {
         fn short_data_is_invalid(symbols: Vec<u8>) -> bool {
-            use internals::code128::Code128;
+            use barcode::code128::Code128;
 
             if symbols.len() < 4 {
                 Code128(symbols.as_ref()).data() == None

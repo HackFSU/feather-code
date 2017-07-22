@@ -3,9 +3,9 @@
 extern crate feather_code as fc;
 extern crate test;
 
-use fc::internals::code128::Code128;
-use fc::internals::format::Decode;
-use fc::internals::code128::encodings;
+use fc::barcode::code128::Code128;
+use fc::barcode::format::Decode;
+use fc::barcode::code128::encodings;
 use test::Bencher;
 
 #[bench]

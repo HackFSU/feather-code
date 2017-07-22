@@ -11,4 +11,4 @@
 #[macro_use]
 extern crate quickcheck;
 
-pub mod internals;
+pub mod barcode;
