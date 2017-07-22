@@ -1,4 +1,7 @@
-//! Traits to encapsulate encoding and decoding
+//! Abstract representation of barcode, or other, data encoding formats
+//!
+//! [`Decode`] and [`Encode`] must be idempotent.
+use std::result;
 
 /// Representation of a barcode format
 pub trait Format {
@@ -7,25 +10,12 @@ pub trait Format {
     fn checksum(&self) -> bool;
 }
 
-
-/// Support decoding a particular format to the target type
-pub trait Decode<F: Format> where Self: Sized {
-
-    /// Convert a formatted data value
-    fn decode(&F) -> Result<Self, FormatErr>;
-}
-
-
-/// Support encoding the target type as a particular format
-pub trait Encode<F: Format> {
-
-    /// Convert to a given format
-    fn encode(&self) -> Result<F, FormatErr>;
-}
+/// Specialized result type for errors in barcode conversions
+pub type Result<T> = result::Result<T, Error>;
 
 /// Describes failure cases for encoding and decoding barcodes
 #[derive(Debug,PartialEq)]
-pub enum FormatErr {
+pub enum Error {
     /// Barcode is too short or too long
     InvalidLength(usize),
     /// Invalid internal format
@@ -34,4 +24,19 @@ pub enum FormatErr {
     EncodeErr(String),
     /// Decode failure
     DecodeErr(String),
+}
+
+/// Support decoding a particular format to the target type
+pub trait Decode<T> where Self: Format {
+
+    /// Convert a formatted data value
+    fn decode(&self) -> Result<T>;
+}
+
+
+/// Support encoding the target type as a particular format
+pub trait Encode<F: Format> {
+
+    /// Convert to a given format
+    fn encode(&self) -> Result<F>;
 }

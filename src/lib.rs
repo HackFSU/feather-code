@@ -7,4 +7,8 @@
 //!
 //! Custom visual encoding format extended from code128 barcode encoding.
 
+#[cfg(test)]
+#[macro_use]
+extern crate quickcheck;
+
 pub mod internals;
