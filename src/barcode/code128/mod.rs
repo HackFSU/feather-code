@@ -146,8 +146,6 @@ pub enum Symbology {
 /// [`B`]: enum.Symbology.html#variant.B
 /// [`C`]: enum.Symbology.html#variant.C
 pub trait Encoding: From<u8> + Into<u8> + PartialOrd {
-    /// Convert an encoding to its string representation in a given symbology
-    fn repr(&self, Symbology) -> String;
 
     /// Get the stop value in the particular encoding format
     ///
@@ -362,14 +360,14 @@ impl<'a, E> Decode<String> for Code128<'a, E> where E: 'a + Encoding + Debug {
 
         let mut decoded: String = "".to_string();
         // Grab start code or return with error in case of bad format
-        let (state, symbols, _) = match self.data() {
+        let (start, symbols, _) = match self.data() {
             Some(x) => x,
             _ => return Err(BadFormat("unrecognized format".into())),
         };
 
         enum Parser { A, B, C, ShiftA, ShiftB }
 
-        let mut state = match state {
+        let mut state = match start {
             A => Parser::A,
             B => Parser::B,
             C => Parser::C,
@@ -380,7 +378,8 @@ impl<'a, E> Decode<String> for Code128<'a, E> where E: 'a + Encoding + Debug {
             state = match state {
                 Parser::A => {
                     match e.as_u8() {
-                        n if n < 98 => {decoded.push_str(&e.repr(A)); Parser::A},
+                        n if n < 64 => {decoded.push((n+32) as char); Parser::A},
+                        n if n < 98 => {decoded.push((n-64) as char); Parser::A},
                         100 => Parser::B, // Switch to symbology B
                         99 => Parser::C, // Switch to symbology C
                         98 => Parser::ShiftB, // shift code
@@ -391,7 +390,7 @@ impl<'a, E> Decode<String> for Code128<'a, E> where E: 'a + Encoding + Debug {
                 },
                 Parser::B => {
                     match e.as_u8() {
-                        n if n < 98 => {decoded.push_str(&e.repr(B)); Parser::B},
+                        n if n < 98 => {decoded.push((n+32) as char); Parser::B},
                         101 => Parser::B, // Switch to symbology A
                         99 => Parser::B, // Switch to symbology C
                         106 => break 'parser,
@@ -402,7 +401,7 @@ impl<'a, E> Decode<String> for Code128<'a, E> where E: 'a + Encoding + Debug {
                 },
                 Parser::C => {
                     match e.as_u8() {
-                        n if n < 100 => {decoded.push_str(&e.repr(C)); Parser::C}
+                        n if n < 100 => {decoded.push_str(&n.to_string()); Parser::C}
                         100 => Parser::B, // Switch to symbology B
                         101 => Parser::A, // Switch to symbology A
                         106 => break 'parser,
@@ -412,13 +411,14 @@ impl<'a, E> Decode<String> for Code128<'a, E> where E: 'a + Encoding + Debug {
                 },
                 Parser::ShiftA => {
                     match e.as_u8() {
-                        n if n < 98 => {decoded.push_str(&e.repr(A)); Parser::B},
+                        n if n < 64 => {decoded.push((n+32) as char); Parser::B},
+                        n if n < 98 => {decoded.push((n-64) as char); Parser::B},
                         _ => return Err(DecodeErr(format!("unexpected shifted encoding {:?}", *e))),
                     }
                 },
                 Parser::ShiftB => {
                     match e.as_u8() {
-                        n if n < 98 => {decoded.push_str(&e.repr(B)); Parser::A},
+                        n if n < 98 => {decoded.push((n+32) as char); Parser::A},
                         _ => return Err(DecodeErr(format!("unexpected shifted encoding {:?}", *e))),
                     }
                 },

@@ -169,21 +169,6 @@ impl Into<u8> for Pattern {
 
 impl Encoding for Pattern {
     #[inline]
-    fn repr(&self, s: Symbology) -> String {
-        match s {
-            Symbology::A => {
-                if  (*self as u8) < 64u8 {
-                    ((*self as u8 + 32) as char).to_string()
-                } else {
-                    ((*self as u8 - 64) as char).to_string()
-                }
-            },
-            Symbology::B => ((*self as u8 + 32) as char).to_string(),
-            Symbology::C => (*self as u8).to_string(),
-        }
-    }
-
-    #[inline]
     fn stop() -> Self {Pattern::C106}
 
     #[inline]
@@ -232,20 +217,6 @@ impl Encoding for Pattern {
 }
 
 impl Encoding for u8 {
-    #[inline]
-    fn repr(&self, s: Symbology) -> String {
-        match s {
-            Symbology::A => {
-                if  *self < 64u8 {
-                    ((*self + 32) as char).to_string()
-                } else {
-                    ((*self - 64) as char).to_string()
-                }
-            },
-            Symbology::B => ((*self + 32) as char).to_string(),
-            Symbology::C => (*self).to_string(),
-        }
-    }
 
     #[inline]
     fn stop() -> Self {106}
@@ -301,18 +272,6 @@ mod test {
         fn pattern_from_u8_to_u8(p: u8) -> bool {
             use super::Encoding;
             p == super::Pattern::from(p).as_u8()
-        }
-
-        fn pattern_repr_matches_u8_repr(p: u8) -> bool {
-            use super::Encoding;
-            use super::Symbology;
-            if p < 107 {
-                super::Pattern::from(p).repr(Symbology::A) == p.repr(Symbology::A) &&
-                super::Pattern::from(p).repr(Symbology::B) == p.repr(Symbology::B) &&
-                super::Pattern::from(p).repr(Symbology::C) == p.repr(Symbology::C)
-            } else {
-                true
-            }
         }
     }
 }
